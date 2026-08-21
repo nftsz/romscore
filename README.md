@@ -1,62 +1,69 @@
-# Ride Analytics - Plataforma de Avaliação e Rankings de ROMs
+# 🎮 Ride Analytics — Game ROMs Rating & Discovery Platform
 
 ![GitHub top language](https://img.shields.io/github/languages/top/nftsz/star-feedback)
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/nftsz/star-feedback/main)
 
-**Ride Analytics** é uma plataforma para descobrir, avaliar e (futuramente) compartilhar experiências com ROMs de jogos para consoles e emuladores.
-Com ele, você pode visualizar detalhes das ROMs, ver notas médias baseadas em avaliações da comunidade e explorar as mais bem avaliadas ou recém-adicionadas. 
+Plataforma web para catalogação, descoberta e avaliação de ROMs de jogos clássicos, com agregação de métricas em tempo real e persistência relacional otimizada em PostgreSQL.
 
-O projeto nasceu com o objetivo acadêmico de criar um sistema de feedback com estrelas, onde usuários poderiam avaliar produtos ou serviços e visualizar uma média dinâmica de notas exibida de forma visualmente atraente com estrelas preenchidas em tempo real.
-Decidimos expandir esse conceito para o universo dos jogos, especificamente das ROMs, transformando a aplicação em uma plataforma de avaliações de jogos clássicos.
+### Tecnologias
 
-## 🔨 Funcionalidades
+* **Backend:** Python, Django, Django ORM
+* **Banco de Dados:** PostgreSQL (Ambiente isolado via Docker)
+* **Frontend:** Django Templates, HTML5, CSS3, Vanilla JavaScript
+* **DevOps / Infra:** Docker, Docker Compose
 
-1. Avaliação de ROMs com sistema de estrelas (1 a 5) em tempo real
-2. Cálculo automático da média das avaliações e exibição dinâmica com estrelas preenchidas
-3. Visualização das ROMs com capa, sinopse, estúdio e galeria de imagens
-4. Ranking de **Top Rated** (mais bem avaliadas) e **Recent Added** (recentemente adicionadas)
+### Decisões de Arquitetura & Engenharia
 
-## ⚙️ Tecnologias Utilizadas
+* **Agregação Dinâmica de Ratings:** Cálculo de médias ponderadas e volume de avaliações processados diretamente na camada de banco via queries do Django ORM (`annotate` e `aggregate`), evitando processamento redundante em memória na aplicação.
+* **Prevenção de N+1 Queries:** Otimização de consultas para rankings (*Top Rated* e *Recent Added*) através de junções eficientes com `select_related` e `prefetch_related`.
+* **Persistência Estruturada:** Modelagem relacional em PostgreSQL com regras de integridade referencial entre jogos, avaliações e metadados.
+* **Gerenciamento de Mídia:** Estruturação e upload de assets visuais (capas, screenshots e sinopses) segregados por identificador de jogo.
+* **Ambiente Containerizado:** Setup completo de desenvolvimento orquestrado via Docker Compose, garantindo paridade de ambiente e provisionamento reproduzível.
 
-1. **Backend:** Django + Django ORM
-2. **Banco de Dados:** PostgreSQL em Docker
-3. **Frontend:** HTML5, CSS3 e JavaScript
-4. **Imagens:** Gerenciadas com ImageField e organizadas por pasta do jogo
-### 🚀 Como Rodar o Projeto
+### Principais Módulos & Regras de Negócio
 
-#### 1. Pré-requisitos
+* **Dynamic Rating System:** Avaliação por estrelas (escala de 1 a 5) com atualização e renderização visual do score médio em tempo real.
+* **Curadoria & Metadados:** Catálogo estruturado por estúdio, plataforma/console, sinopse e galeria de capturas de tela.
+* **Rankings Automatizados:** Filtros analíticos dinâmicos para listagem dos títulos mais bem pontuados e das adições mais recentes.
 
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose](https://docs.docker.com/compose/)
-#### 2. Clonar o repositório
+
+### Como Executar o Projeto
+
+**1. Pré-requisitos:**
+
+* Docker e Docker Compose instalados.
+
+**2. Clonar o repositório:**
 
 ```bash
 git clone https://github.com/seu-usuario/ride-analytics.git
 cd ride-analytics
-```
 
-#### 3. Subir os containers
+```
+**3. Subir o ambiente:**
 
 ```bash
-docker-compose up --build
+docker compose up --build
+
 ```
+> O Docker Compose irá provisionar o banco PostgreSQL, aplicar as migrações estruturais e inicializar o servidor de aplicação Django.
 
-Isso vai:
+**4. Acessar a aplicação:**
+> Interface disponível em: `http://localhost:8000/home/`
 
-- Criar o container do **PostgreSQL**
-- Criar o container do **Django** conectado ao banco
-- Rodar o servidor local na porta `8000`
+### Licença
 
-Acesse em: [http://localhost:8000/home/](http://localhost:8000/home/)
+Distribuído sob a licença MIT.
 
-## 📃  Próximos Passos
+---
 
-- Sistema de autenticação (login/registro) para avaliações personalizadas
-- Sistema de comentários nas ROMs
-- Melhorias no design da UI/UX
-- Possibilidade de usuários solicitarem suas próprias ROMs
+### Roadmap Técnico
 
-## 💞 Contribuição
+* [ ] Implementação de camada de autenticação para rastreamento de avaliações únicas por usuário.
+* [ ] Exposição de endpoints RESTful para desacoplamento de frontend via Django REST Framework.
+* [ ] Cobertura de testes automatizados com `pytest-django` para validar o cálculo das médias e integridade das queries.
+* [ ] Cache de consultas frequentes (Top Rated) utilizando Redis.
 
-Contribuições são super bem-vindas!  
-Abra uma issue ou envie um pull request com melhorias, correções ou novas ideias.
+
+
+
