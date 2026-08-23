@@ -23,7 +23,7 @@ load_dotenv()
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-d-y-em&&19+r73bsiacj0qn&fkjuggc7q1m@ve-*ctj-)f6j-^'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -78,7 +78,6 @@ TEMPLATES = [
     },
 ]
 
-TEMPLATE_DIRS = (os.path.join(BASE_DIR,  "templates"))
 
 WSGI_APPLICATION = 'starfeedback.wsgi.application'
 
@@ -133,9 +132,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "static",  # pasta global do projeto
-]
+
 
 # Media URl
 
