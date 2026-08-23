@@ -1,85 +1,8 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# C extensions
-*.so
-
-### Django ###
-*.log
-*.pot
 *.pyc
 __pycache__/
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-media/roms_capa
-media/roms_jogo
-
-### Django.Python Stack ###
-# Byte-compiled / optimized / DLL files
-*.py[cod]
-*$py.class
-
-# Virtual environment
+*.sqlite3
+.env
 venv/
-env/
-ENV/
 .venv/
-.env
-
-# IDEs and editors
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-
-# macOS
-.DS_Store
-
-# Windows
-Thumbs.db
-desktop.ini
-
-# Environment variables
-.env
-.env.*
-
-# Coverage reports
-.coverage
-htmlcov/
-*.cover
-*.py,cover
-
-# Pytest cache
-.pytest_cache/
-nosetests.xml
-coverage.xml
-*.coveragerc
-
-# Django migrations
-*/migrations/*.py
-!*/migrations/__init__.py
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# Logs
-*.log
-
-# Node / frontend
 node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
-
-# Docker
-*.dockerignore
-Dockerfile
-docker-compose.override.yml
-
-# IPython
-profile_default/
-ipython_config.py
+dist/
