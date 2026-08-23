@@ -152,10 +152,10 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Minha API Django",
-    "DESCRIPTION": "Documentação da API usando DRF Spectacular",
-    "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,
+    'TITLE': 'Ride Analytics API',
+    'DESCRIPTION': 'RESTful API for game discovery, user ratings, and analytics aggregations.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 SIMPLE_JWT = {
