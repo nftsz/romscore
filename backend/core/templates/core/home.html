@@ -1,0 +1,130 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ride Analytics - Home</title>
+    <link rel="stylesheet" href="{% static 'core/css/home.css' %}">
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo">
+                    <img src="{% static 'core/logo.png' %}" alt="logo">
+                    <span class="logo-text">Ride Analytics</span>
+                </a>
+                <nav>
+                    <ul>
+                        <li><a href="#">Início</a></li>
+                        <li><a href="#">ROMs</a></li>
+                        <li><a href="#">Emuladores</a></li>
+                        <li><a href="#">Avaliações</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Encontre as Melhores ROMs para Emuladores</h1>
+            <p>Descubra, avalie e compartilhe suas experiências com jogos clássicos</p>
+            <div class="search-bar">
+                <input type="text" placeholder="Buscar ROMs por nome, console ou gênero...">
+                <button><i class="fas fa-search"></i> Buscar</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top Rated Section -->
+    <section class="top-rated-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Top Rated ROMs</h2>
+            </div>
+            <div class="top-rated">
+                {% for rom in roms %}
+                <div class="rom" data-rom-id="{{ rom.id }}">
+
+                    <!-- Capa -->
+                    {% if rom.imagem_capa %}
+                        <img src="{{ rom.imagem_capa.url }}" alt="{{ rom.nome }}">
+                    {% else %}
+                        <img src="{% static 'default.jpg' %}" alt="{{ rom.nome }}">
+                    {% endif %}
+
+                    <!-- Nome e emulador -->
+                    <h3>{{ rom.nome }}</h3>
+                    <h5><span>({{ rom.get_emulador_display }})</span></h5>
+
+                    <!-- Estrelas -->
+                    <div class="estrelas" data-media="{{ rom.media|default:0 }}">
+                            {% for i in "12345" %}
+                                <span data-valor="{{ i }}">★</span>
+                            {% endfor %}
+                    </div>
+                    <p>Média: {{ rom.media|default:"0"|floatformat:2 }}</p>
+                </div>
+
+                {% empty %}
+                    <p>Nenhuma ROM encontrada.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Most Recent Added Section -->
+    <section class="recent-added-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Most Recent Added</h2>
+            </div>
+            <div class="recent-added">
+                <div class="games-container">
+                    {% for rom in roms_recent %}
+                    <div class="rom" data-rom-id="{{ rom.id }}">
+
+                        <!-- Capa -->
+                        {% if rom.imagem_capa %}
+                            <img src="{{ rom.imagem_capa.url }}" alt="{{ rom.nome }}">
+                        {% else %}
+                            <img src="{% static 'default.jpg' %}" alt="{{ rom.nome }}">
+                        {% endif %}
+
+                        <!-- Nome e emulador -->
+                        <h3>{{ rom.nome }}</h3>
+                        <h5><span>({{ rom.get_emulador_display }})</span></h5>
+
+                        <!-- Estrelas -->
+                        <div class="estrelas" data-media="{{ rom.media|default:0 }}">
+                            {% for i in "12345" %}
+                                <span data-valor="{{ i }}">★</span>
+                            {% endfor %}
+                        </div>
+                        <p>Média: {{ rom.media|default:"0"|floatformat:2 }}</p>
+                    </div>
+                    {% empty %}
+                    <p>Nenhuma ROM encontrada.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-bottom">
+            &copy; 2025 Naftaly e Daniel. Todos os direitos reservados.
+        </div>
+    </footer>
+
+    <script src="{% static 'core/js/lista_roms.js' %}"></script>
+    <script src="{% static 'core/js/detalhe_rom.js' %}"></script>
+</body>
+</html>
