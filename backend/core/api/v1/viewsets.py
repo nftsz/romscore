@@ -5,13 +5,17 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from core.models import Game, Rating
-from .serializers import UserSerializer, RegisterSerializer, GameSerializer, RatingSerializer
+from core.models import Game, RomHack, HackRating
+from .serializers import (
+    UserSerializer,
+    RegisterSerializer,
+    GameSerializer,
+    RomHackSerializer,
+    HackRatingSerializer
+)
 
+# Cadastro e consulta
 class AuthViewSet(viewsets.GenericViewSet):
-    """
-    ViewSet para registro de novos usuários e consulta do usuário logado.
-    """
     queryset = User.objects.all()
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
@@ -26,48 +30,69 @@ class AuthViewSet(viewsets.GenericViewSet):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
-
+# lista e busca de jogos
 class GameViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para listar jogos salvos, detalhar e avaliar.
-    """
     serializer_class = GameSerializer
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         return (
             Game.objects
+            .annotate(total_hacks=Count('hacks'))
+            .prefetch_related(
+                'hacks__ratings__user',
+                'hacks__created_by'
+            )
+            .order_by('-created_at')
+        )
+
+# CRUD de Mods/Traduções e submissão de avaliações por usuários
+class RomHackViewSet(viewsets.ModelViewSet):
+    serializer_class = RomHackSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        queryset = (
+            RomHack.objects
             .annotate(
                 avg_score=Coalesce(Avg('ratings__score'), Value(0, output_field=FloatField())),
                 total_ratings=Count('ratings')
             )
+            .select_related('game', 'created_by')
             .prefetch_related('ratings__user')
             .order_by('-avg_score')
         )
 
+        game_id = self.request.query_params.get('game')
+        if game_id:
+            queryset = queryset.filter(game_id=game_id)
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
     @action(detail=True, methods=['post', 'delete'], permission_classes=[permissions.IsAuthenticated])
     def rate(self, request, pk=None):
-        """
-        POST: Cria ou atualiza a nota/comentário do usuário logado.
-        DELETE: Remove a nota do usuário logado.
-        """
-        game = self.get_object()
+        # POST: Cria ou edita a nota/review do usuário logado no mod.    
+        # DELETE: Exclui a avaliação.
+
+        hack = self.get_object()
 
         if request.method == 'DELETE':
-            Rating.objects.filter(game=game, user=request.user).delete()
+            HackRating.objects.filter(hack=hack, user=request.user).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         score = request.data.get('score')
-        comment = request.data.get('comment', '')
+        review = request.data.get('review', '')
 
         if not score or not (1 <= int(score) <= 5):
-            return Response({'error': 'A nota (score) deve ser um inteiro de 1 a 5.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'A nota deve ser um inteiro entre 1 e 5.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        rating, created = Rating.objects.update_or_create(
-            game=game,
+        rating, created = HackRating.objects.update_or_create(
+            hack=hack,
             user=request.user,
-            defaults={'score': int(score), 'comment': comment}
+            defaults={'score': int(score), 'review': review}
         )
 
-        serializer = RatingSerializer(rating)
+        serializer = HackRatingSerializer(rating)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)

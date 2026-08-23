@@ -152,7 +152,7 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Ride Analytics API',
+    'TITLE': 'ROMScore API',
     'DESCRIPTION': 'RESTful API for game discovery, user ratings, and analytics aggregations.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,

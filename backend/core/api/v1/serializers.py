@@ -1,8 +1,8 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from core.models import Game, Rating
+from core.models import Game, RomHack, HackRating
 
-# --- SERIALIZERS DE AUTH ---
+# AUTH SERIALIZERS 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -24,28 +24,33 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
 
-# --- SERIALIZERS DE JOGOS & RATINGS ---
-class RatingSerializer(serializers.ModelSerializer):
+#  RATINGS SERIALIZERS 
+class HackRatingSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')
 
     class Meta:
-        model = Rating
-        fields = ['id', 'user', 'username', 'score', 'comment', 'created_at', 'updated_at']
+        model = HackRating
+        fields = ['id', 'user', 'username', 'score', 'review', 'created_at', 'updated_at']
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 
 
-class GameSerializer(serializers.ModelSerializer):
+#  ROM HACK SERIALIZERS 
+class RomHackSerializer(serializers.ModelSerializer):
+    submitted_by = serializers.ReadOnlyField(source='created_by.username')
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
     avg_score = serializers.FloatField(read_only=True)
     total_ratings = serializers.IntegerField(read_only=True)
     user_rating = serializers.SerializerMethodField()
-    ratings = RatingSerializer(many=True, read_only=True)
+    ratings = HackRatingSerializer(many=True, read_only=True)
 
     class Meta:
-        model = Game
+        model = RomHack
         fields = [
-            'id', 'rawg_id', 'slug', 'title', 'cover_url',
-            'avg_score', 'total_ratings', 'user_rating', 'ratings', 'created_at'
+            'id', 'game', 'title', 'author_name', 'category', 'category_display',
+            'description', 'patch_url', 'submitted_by', 'avg_score', 
+            'total_ratings', 'user_rating', 'ratings', 'created_at'
         ]
+        read_only_fields = ['id', 'submitted_by', 'created_at']
 
     def get_user_rating(self, obj):
         request = self.context.get('request')
@@ -53,3 +58,13 @@ class GameSerializer(serializers.ModelSerializer):
             rating = obj.ratings.filter(user=request.user).first()
             return rating.score if rating else None
         return None
+
+
+#  GAME SERIALIZERS 
+class GameSerializer(serializers.ModelSerializer):
+    hacks = RomHackSerializer(many=True, read_only=True)
+    total_hacks = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Game
+        fields = ['id', 'rawg_id', 'slug', 'title', 'cover_url', 'total_hacks', 'hacks', 'created_at']
