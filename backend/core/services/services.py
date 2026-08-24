@@ -1,6 +1,5 @@
 import os
 import requests
-from django.utils.text import slugify
 
 RA_BASE_URL = "https://retroachievements.org/API"
 RA_MEDIA_BASE = "https://media.retroachievements.org"
@@ -22,50 +21,60 @@ class RetroAchievementsService:
         return bool(self.user and self.key)
 
     def get_console_classics(self, console_id, limit=10):
-        """Busca a lista do console e filtra apenas os clássicos canônicos."""
         url = f"{RA_BASE_URL}/API_GetGameList.php"
-        res = requests.get(
-            url,
-            params={"z": self.user, "y": self.key, "i": console_id, "f": 1, "h": 0},
-            timeout=20
-        )
-        if res.status_code != 200:
+        try:
+            res = requests.get(
+                url,
+                params={"z": self.user, "y": self.key, "i": console_id, "f": 1, "h": 0},
+                timeout=20
+            )
+            if res.status_code != 200:
+                return []
+
+            games = res.json()
+            if not isinstance(games, list):
+                return []
+
+            filtered = [
+                g for g in games
+                if g.get("Title")
+                and not g.get("Title").startswith("~")
+                and "[Subset" not in g.get("Title")
+                and "Homebrew" not in g.get("Title")
+                and "Prototype" not in g.get("Title")
+                and any(kw in g.get("Title").lower() for kw in CANONICAL_KEYWORDS)
+            ]
+            return filtered[:limit]
+        except Exception:
             return []
 
-        games = res.json()
-        if not isinstance(games, list):
-            return []
-
-        filtered = [
-            g for g in games
-            if g.get("Title")
-            and not g.get("Title").startswith("~")
-            and "[Subset" not in g.get("Title")
-            and "Homebrew" not in g.get("Title")
-            and "Prototype" not in g.get("Title")
-            and any(kw in g.get("Title").lower() for kw in CANONICAL_KEYWORDS)
-        ]
-        return filtered[:limit]
-
-    def get_game_details(self, game_id):
-        """Busca os metadados completos e links de imagem de um jogo específico."""
+    def get_game_details(self, fallback_id, fallback_item=None):
         url = f"{RA_BASE_URL}/API_GetGame.php"
-        res = requests.get(
-            url,
-            params={"z": self.user, "y": self.key, "i": game_id},
-            timeout=15
-        )
-        if res.status_code != 200:
+        try:
+            res = requests.get(
+                url,
+                params={"z": self.user, "y": self.key, "i": fallback_id},
+                timeout=15
+            )
+            d = res.json() if res.status_code == 200 else {}
+        except Exception:
+            d = {}
+
+        # Garante ID válido
+        game_id = d.get("ID") or fallback_id
+        if not game_id:
             return None
 
-        d = res.json()
-        cover_path = d.get("ImageBoxArt") or d.get("ImageIcon")
+        # Monta caminhos da CDN
+        cover_path = d.get("ImageBoxArt") or d.get("ImageIcon") or (fallback_item.get("ImageIcon") if fallback_item else "")
         title_path = d.get("ImageTitle")
         ingame_path = d.get("ImageIngame")
 
+        title = d.get("Title") or (fallback_item.get("Title") if fallback_item else "")
+
         return {
-            "ra_id": d.get("ID"),
-            "title": d.get("Title", "").strip(),
+            "ra_id": int(game_id),
+            "title": title.strip(),
             "console_id": d.get("ConsoleID"),
             "released_date": d.get("Released") or "",
             "publisher": d.get("Publisher") or "",
