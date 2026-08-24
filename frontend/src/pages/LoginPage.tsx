@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../lib/context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 export const LoginPage: React.FC = () => {
   const [isRegister, setIsRegister] = useState(false);
@@ -21,7 +21,6 @@ export const LoginPage: React.FC = () => {
 
     try {
       if (isRegister) {
-        // Rota de registro criada no AuthViewSet
         await api.post('/auth/register/', {
           username,
           email: email || undefined,
@@ -29,7 +28,6 @@ export const LoginPage: React.FC = () => {
         });
       }
 
-      // Rota de login JWT padrão
       const response = await api.post<{ access: string; refresh: string }>('/auth/login/', {
         username,
         password,
@@ -39,7 +37,6 @@ export const LoginPage: React.FC = () => {
       navigate('/');
     } catch (err: any) {
       if (err.response?.data) {
-        // Extrai a mensagem de erro específica do DRF (ex: "A user with that username already exists.")
         const firstError = Object.values(err.response.data)[0];
         if (Array.isArray(firstError)) {
           setError(firstError[0]);
@@ -57,140 +54,109 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: '420px',
-        margin: '4rem auto',
-        padding: '2rem',
-        border: '1px solid #334155',
-        borderRadius: '12px',
-        background: '#0f172a',
-        color: '#f8fafc',
-        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-      }}
-    >
-      <h2 style={{ margin: '0 0 1.5rem 0', textAlign: 'center', fontSize: '1.5rem' }}>
-        {isRegister ? 'Criar Conta' : 'Entrar na Plataforma'}
-      </h2>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center px-4 py-12">
+      {/* Botão de Voltar para a Home */}
+      <Link
+        to="/"
+        className="mb-8 flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-indigo-400 transition-colors"
+      >
+        ← Voltar para a página inicial
+      </Link>
 
-      {error && (
-        <div
-          style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid #ef4444',
-            color: '#fca5a5',
-            padding: '0.75rem',
-            borderRadius: '6px',
-            marginBottom: '1rem',
-            fontSize: '0.875rem',
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
-        <div>
-          <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', color: '#94a3b8' }}>
-            Usuário
-          </label>
-          <input
-            type="text"
-            required
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.6rem',
-              borderRadius: '6px',
-              border: '1px solid #334155',
-              background: '#1e293b',
-              color: '#fff',
-              boxSizing: 'border-box',
-            }}
-          />
+      {/* Card Principal */}
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl shadow-indigo-950/20">
+        {/* Header do Card com a Logo */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white font-black text-2xl shadow-lg shadow-indigo-600/30 mb-3">
+            🎮
+          </div>
+          <h1 className="text-xl font-extrabold tracking-wider text-slate-100 font-mono">
+            ROM<span className="text-indigo-400">Score</span>
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            {isRegister
+              ? 'Crie sua conta para enviar e avaliar ROM hacks'
+              : 'Entre para gerenciar suas modificações e avaliações'}
+          </p>
         </div>
 
-        {isRegister && (
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', color: '#94a3b8' }}>
-              E-mail (opcional)
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.6rem',
-                borderRadius: '6px',
-                border: '1px solid #334155',
-                background: '#1e293b',
-                color: '#fff',
-                boxSizing: 'border-box',
-              }}
-            />
+        {/* Mensagem de Erro */}
+        {error && (
+          <div className="mb-4 rounded-lg bg-rose-500/10 border border-rose-500/30 p-3 text-xs text-rose-400">
+            {error}
           </div>
         )}
 
-        <div>
-          <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', color: '#94a3b8' }}>
-            Senha (mínimo 6 caracteres)
-          </label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.6rem',
-              borderRadius: '6px',
-              border: '1px solid #334155',
-              background: '#1e293b',
-              color: '#fff',
-              boxSizing: 'border-box',
+        {/* Formulário */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              Nome de Usuário
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="ex: red_trainer"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
+            />
+          </div>
+
+          {isRegister && (
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                E-mail (opcional)
+              </label>
+              <input
+                type="email"
+                placeholder="ex: trainer@kanto.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              Senha
+            </label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 disabled:bg-indigo-600/50 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            {loading ? 'Processando...' : isRegister ? 'Cadastrar e Entrar' : 'Entrar'}
+          </button>
+        </form>
+
+        {/* Alternador de Modo Login / Registro */}
+        <div className="mt-6 border-t border-slate-800/80 pt-4 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setIsRegister(!isRegister);
+              setError('');
             }}
-          />
+            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            {isRegister
+              ? 'Já possui uma conta? Faça Login'
+              : 'Não tem uma conta? Crie uma agora'}
+          </button>
         </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            marginTop: '0.5rem',
-            padding: '0.75rem',
-            background: '#6366f1',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontWeight: 'bold',
-            transition: 'background 0.2s',
-          }}
-        >
-          {loading ? 'Processando...' : isRegister ? 'Cadastrar e Entrar' : 'Entrar'}
-        </button>
-      </form>
-
-      <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem' }}>
-        <button
-          type="button"
-          onClick={() => {
-            setIsRegister(!isRegister);
-            setError('');
-          }}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#818cf8',
-            cursor: 'pointer',
-            textDecoration: 'underline',
-          }}
-        >
-          {isRegister ? 'Já tem uma conta? Faça Login' : 'Não tem conta? Cadastre-se'}
-        </button>
       </div>
     </div>
   );

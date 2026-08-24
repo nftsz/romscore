@@ -45,6 +45,12 @@ class RomHackSerializer(serializers.ModelSerializer):
     submitted_by = serializers.ReadOnlyField(source='created_by.username')
     category_display = serializers.CharField(source='get_category_display', read_only=True)
     screenshots = HackScreenshotSerializer(many=True, read_only=True)
+    screenshots_urls = serializers.ListField(
+        child=serializers.URLField(),
+        write_only=True,
+        required=False,
+        default=list
+    )
     ratings = HackRatingSerializer(many=True, read_only=True)
     avg_score = serializers.SerializerMethodField()
     total_ratings = serializers.SerializerMethodField()
@@ -55,9 +61,27 @@ class RomHackSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'game', 'title', 'author_name', 'category', 'category_display',
             'description', 'patch_url', 'cover_url', 'submitted_by',
-            'avg_score', 'total_ratings', 'user_rating', 'screenshots', 'ratings', 'created_at'
+            'avg_score', 'total_ratings', 'user_rating', 'screenshots', 'screenshots_urls',
+            'ratings', 'created_at'
         ]
         read_only_fields = ['id', 'submitted_by', 'created_at']
+
+    def create(self, validated_data):
+        # Extrai os links de screenshots para persistir na tabela relacionada
+        screenshots_urls = validated_data.pop('screenshots_urls', [])
+        
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            validated_data['created_by'] = request.user
+
+        rom_hack = RomHack.objects.create(**validated_data)
+
+        # Cria os objetos de screenshot vinculados à hack recém-criada
+        for url in screenshots_urls[:3]:
+            if url.strip():
+                HackScreenshot.objects.create(hack=rom_hack, image_url=url.strip())
+
+        return rom_hack
 
     def get_avg_score(self, obj):
         if hasattr(obj, 'avg_score') and obj.avg_score is not None:

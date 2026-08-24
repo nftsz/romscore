@@ -1,9 +1,11 @@
 from django.contrib.auth.models import User
-from django.db.models import Avg, Count, Value, FloatField
+from django.db.models import Avg, Count, Value, FloatField, Max
 from django.db.models.functions import Coalesce
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+
 
 from core.models import Game, RomHack, HackRating
 from .serializers import (
@@ -29,37 +31,39 @@ class AuthViewSet(viewsets.GenericViewSet):
     def me(self, request):
         return Response(UserSerializer(request.user).data)
 
-
-class GameViewSet(viewsets.ModelViewSet):
-    serializer_class = GameSerializer
+class GameViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
+    serializer_class = GameSerializer
 
     def get_queryset(self):
-        queryset = (
-            Game.objects
-            .annotate(total_hacks=Count('hacks'))
-            .prefetch_related('hacks__ratings__user', 'hacks__created_by', 'hacks__screenshots')
+        queryset = Game.objects.annotate(
+            total_hacks=Count('hacks', distinct=True),
+            latest_hack_date=Max('hacks__created_at'),
         )
-
-        search = self.request.query_params.get('search')
-        if search:
-            queryset = queryset.filter(title__icontains=search)
 
         platform = self.request.query_params.get('platform')
         if platform:
             queryset = queryset.filter(platform__iexact=platform)
 
-        filter_by = self.request.query_params.get('filter', '')
-        if filter_by == 'popular':
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(title__icontains=search)
+
+        filter_type = self.request.query_params.get('filter')
+        if filter_type == 'popular':
             queryset = queryset.order_by('-total_players')
-        elif filter_by == 'most_hacked':
-            queryset = queryset.order_by('-total_hacks')
-        else:
-            queryset = queryset.order_by('-created_at')
+        elif filter_type == 'recent_hacks':
+            # Apenas jogos que realmente possuem hacks, ordenados pelo patch mais recente
+            queryset = queryset.filter(total_hacks__gt=0).order_by('-latest_hack_date')
+        elif filter_type == 'most_hacked':
+            queryset = queryset.filter(total_hacks__gt=0).order_by('-total_hacks')
 
         limit = self.request.query_params.get('limit')
-        if limit and limit.isdigit():
-            return queryset[:int(limit)]
+        if limit:
+            try:
+                queryset = queryset[:int(limit)]
+            except ValueError:
+                pass
 
         return queryset
 
