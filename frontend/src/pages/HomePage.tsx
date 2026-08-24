@@ -1,160 +1,158 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Game } from '../lib/types/types';
 import { api } from '../services/api';
-import { Game, RomHack } from '../lib/types/types';
-import { useAuth } from '../lib/context/AuthContext';
-import { Star, Plus, LogIn, LogOut } from 'lucide-react';
+import { Header } from '../components/Header';
+import { PaginatedGameSection } from '../components/PaginatedGameSection';
+import { GameCard } from '../components/GameCard';
+
+const CONSOLES = [
+  { id: 'SNES', title: 'Super Nintendo' },
+  { id: 'GBA', title: 'Game Boy Advance' },
+  { id: 'PS1', title: 'PlayStation 1' },
+  { id: 'PS2', title: 'PlayStation 2' },
+  { id: 'N64', title: 'Nintendo 64' },
+  { id: 'Mega Drive', title: 'Mega Drive / Genesis' },
+];
 
 export const HomePage: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const [games, setGames] = useState<Game[]>([]);
+  const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<Game[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Estados das seções analíticas
+  const [popularGames, setPopularGames] = useState<Game[]>([]);
+  const [recentHackedGames, setRecentHackedGames] = useState<Game[]>([]);
+  const [consoleGames, setConsoleGames] = useState<{ [key: string]: Game[] }>({});
   const [loading, setLoading] = useState(true);
 
-  // Estados para envio de nota rápida
-  const [selectedHack, setSelectedHack] = useState<number | null>(null);
-  const [score, setScore] = useState(5);
-  const [review, setReview] = useState('');
-
-  const fetchGames = async () => {
-    try {
-      const response = await api.get<Game[]>('/games/');
-      setGames(response.data);
-    } catch (err) {
-      console.error('Erro ao buscar jogos:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Carga das listas da API
   useEffect(() => {
-    fetchGames();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [popRes, recentRes] = await Promise.all([
+          api.get<Game[]>('/games/', { params: { filter: 'popular', limit: 12 } }),
+          api.get<Game[]>('/games/', { params: { filter: 'recent_hacks', limit: 12 } }),
+        ]);
+
+        setPopularGames(popRes.data);
+        setRecentHackedGames(recentRes.data);
+
+        // Busca paralela para cada plataforma
+        const consoleData: { [key: string]: Game[] } = {};
+        await Promise.all(
+          CONSOLES.map(async (console) => {
+            const res = await api.get<Game[]>('/games/', {
+              params: { platform: console.id, filter: 'popular', limit: 12 },
+            });
+            consoleData[console.id] = res.data;
+          })
+        );
+        setConsoleGames(consoleData);
+      } catch (err) {
+        console.error('Erro ao carregar catálogo:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const handleRate = async (hackId: number) => {
-    if (!isAuthenticated) {
-      alert('Você precisa estar logado para avaliar!');
+  // Busca textual debounce
+  useEffect(() => {
+    if (!search.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
       return;
     }
-    try {
-      await api.post(`/hacks/${hackId}/rate/`, { score, review });
-      alert('Avaliação enviada com sucesso!');
-      setSelectedHack(null);
-      setReview('');
-      fetchGames();
-    } catch (err) {
-      console.error('Erro ao avaliar hack:', err);
-      alert('Erro ao enviar avaliação.');
-    }
-  };
 
-  if (loading) {
-    return <div style={{ padding: '2rem', color: '#fff' }}>Carregando catálogo...</div>;
-  }
+    setIsSearching(true);
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await api.get<Game[]>('/games/', {
+          params: { search: search.trim() },
+        });
+        setSearchResults(response.data);
+      } catch (err) {
+        console.error('Erro na pesquisa:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [search]);
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem', fontFamily: 'sans-serif' }}>
-      {/* Header com Auth */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ margin: 0 }}>🎮 Ride Analytics</h1>
-          <p style={{ margin: '0.5rem 0 0', color: '#888' }}>Descoberta e Avaliações de Hacks, Traduções e Mods</p>
-        </div>
-        <div>
-          {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span>Olá, <strong>{user?.username}</strong>!</span>
-              <button onClick={logout} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
-                <LogOut size={16} /> Sair
-              </button>
-            </div>
-          ) : (
-            <a href="/login" style={{ padding: '0.5rem 1rem', background: '#3b82f6', color: '#fff', textDecoration: 'none', borderRadius: '4px' }}>
-              <LogIn size={16} /> Entrar / Criar Conta
-            </a>
-          )}
-        </div>
-      </header>
+    <div className="min-h-screen bg-slate-950 text-slate-100 pb-16">
+      {/* Header com ROMScore & Busca */}
+      <Header search={search} onSearchChange={setSearch} />
 
-      {/* Listagem de Jogos */}
-      <div style={{ display: 'grid', gap: '2rem' }}>
-        {games.length === 0 ? (
-          <p>Nenhum jogo cadastrado ainda. Use o Swagger ou adicione o primeiro jogo!</p>
-        ) : (
-          games.map((game) => (
-            <div key={game.id} style={{ border: '1px solid #333', borderRadius: '8px', padding: '1.5rem', background: '#1a1a1a' }}>
-              <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem' }}>
-                {game.cover_url && (
-                  <img src={game.cover_url} alt={game.title} style={{ width: '120px', height: '160px', objectFit: 'cover', borderRadius: '4px' }} />
-                )}
-                <div>
-                  <h2 style={{ margin: '0 0 0.5rem' }}>{game.title}</h2>
-                  <span style={{ fontSize: '0.85rem', color: '#aaa', background: '#333', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
-                    {game.total_hacks} Mods / Traduções cadastradas
-                  </span>
-                </div>
-              </div>
+      <main className="max-w-7xl mx-auto px-6 py-6">
+        {search.trim() ? (
+          /* Resultados da Busca Textual */
+          <section className="py-4">
+            <h2 className="text-xl font-bold mb-4 text-slate-200 flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 animate-pulse" />
+              Resultados para "{search}" ({searchResults.length})
+            </h2>
 
-              {/* Lista de Mods daquele Jogo */}
-              <h3 style={{ borderBottom: '1px solid #333', paddingBottom: '0.5rem', marginTop: '1.5rem' }}>
-                Mods & Traduções Disponíveis
-              </h3>
-              
-              <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
-                {game.hacks?.map((hack) => (
-                  <div key={hack.id} style={{ background: '#252525', padding: '1rem', borderRadius: '6px', border: '1px solid #444' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <h4 style={{ margin: '0 0 0.3rem' }}>{hack.title}</h4>
-                        <span style={{ fontSize: '0.8rem', color: '#60a5fa' }}>Por: {hack.author_name} ({hack.category_display})</span>
-                        <p style={{ margin: '0.5rem 0', fontSize: '0.9rem', color: '#ccc' }}>{hack.description}</p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f59e0b', fontWeight: 'bold' }}>
-                          <Star size={16} fill="#f59e0b" /> {hack.avg_score.toFixed(1)} <span style={{ color: '#888', fontSize: '0.8rem' }}>({hack.total_ratings})</span>
-                        </div>
-                        {hack.patch_url && (
-                          <a href={hack.patch_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: '#10b981', display: 'block', marginTop: '0.5rem' }}>
-                            Baixar Patch ↗
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Botão para Avaliar */}
-                    <div style={{ marginTop: '0.8rem', paddingTop: '0.8rem', borderTop: '1px dashed #333' }}>
-                      {selectedHack === hack.id ? (
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
-                          <select value={score} onChange={(e) => setScore(Number(e.target.value))} style={{ padding: '0.3rem' }}>
-                            <option value={5}>5 ★ - Excelente</option>
-                            <option value={4}>4 ★ - Muito Bom</option>
-                            <option value={3}>3 ★ - Regular</option>
-                            <option value={2}>2 ★ - Ruim</option>
-                            <option value={1}>1 ★ - Péssimo</option>
-                          </select>
-                          <input
-                            type="text"
-                            placeholder="Comentário sobre estabilidade/tradução..."
-                            value={review}
-                            onChange={(e) => setReview(e.target.value)}
-                            style={{ flex: 1, padding: '0.3rem' }}
-                          />
-                          <button onClick={() => handleRate(hack.id)} style={{ padding: '0.3rem 0.8rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                            Salvar
-                          </button>
-                          <button onClick={() => setSelectedHack(null)} style={{ padding: '0.3rem', cursor: 'pointer' }}>Cancelar</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setSelectedHack(hack.id)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>
-                          Avaliar este mod
-                        </button>
-                      )}
-                    </div>
-                  </div>
+            {isSearching ? (
+              <div className="flex flex-wrap gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="w-44 aspect-[3/4] shrink-0 bg-slate-900 animate-pulse rounded-xl" />
                 ))}
               </div>
-            </div>
-          ))
+            ) : searchResults.length > 0 ? (
+              <div className="flex flex-wrap gap-4">
+                {searchResults.map((game) => (
+                  <GameCard key={game.id} game={game} />
+                ))}
+              </div>
+            ) : (
+              <div className="py-16 text-center text-slate-500">
+                Nenhum título encontrado para o termo pesquisado.
+              </div>
+            )}
+          </section>
+        ) : (
+          /* Listagens por Carrossel com Ver Mais */
+          <div className="space-y-2">
+            {/* Mais Populares */}
+            <PaginatedGameSection
+              title="🔥 Mais Populares"
+              subtitle="Títulos clássicos em destaque na comunidade"
+              categoryRoute="/category?filter=popular"
+              games={popularGames}
+              loading={loading}
+            />
+
+            {/* Hacks Recentes (só renderiza se houver títulos com patches) */}
+            {recentHackedGames.length > 0 && (
+              <PaginatedGameSection
+                title="⚡ Hacks & Traduções Recentes"
+                subtitle="Jogos que acabaram de receber novos patches e modificações"
+                categoryRoute="/category?filter=recent_hacks"
+                games={recentHackedGames}
+                loading={loading}
+              />
+            )}
+
+            {/* Carrosséis de Plataforma */}
+            {CONSOLES.map((c) => (
+              <PaginatedGameSection
+                key={c.id}
+                title={c.title}
+                subtitle={`Destaques de ${c.title}`}
+                categoryRoute={`/category?platform=${encodeURIComponent(c.id)}`}
+                games={consoleGames[c.id] || []}
+                loading={loading}
+              />
+            ))}
+          </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };

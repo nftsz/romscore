@@ -29,6 +29,8 @@ services:
       - .env
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - RA_USER=${RA_USER}
+      - RA_API_KEY=${RA_API_KEY}
     depends_on:
       - db
     restart: unless-stopped

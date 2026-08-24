@@ -10,6 +10,9 @@ interface AuthContextType {
   logout: () => void;
 }
 
+export const TOKEN_KEY = '@RideAnalytics:access_token';
+export const REFRESH_KEY = '@RideAnalytics:refresh_token';
+
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -28,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('@RideAnalytics:access_token');
+    const token = localStorage.getItem(TOKEN_KEY);
     if (token) {
       fetchCurrentUser();
     } else {
@@ -37,14 +40,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async ({ access, refresh }: { access: string; refresh: string }) => {
-    localStorage.setItem('@RideAnalytics:access_token', access);
-    localStorage.setItem('@RideAnalytics:refresh_token', refresh);
+    localStorage.setItem(TOKEN_KEY, access);
+    localStorage.setItem(REFRESH_KEY, refresh);
     await fetchCurrentUser();
   };
 
   const logout = () => {
-    localStorage.removeItem('@RideAnalytics:access_token');
-    localStorage.removeItem('@RideAnalytics:refresh_token');
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
     setUser(null);
   };
 

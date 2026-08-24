@@ -1,20 +1,22 @@
 from django.contrib.auth.models import User
-from django.db.models import Avg, Count, Value, FloatField
+from django.db.models import Avg, Count, Value, FloatField, Max
 from django.db.models.functions import Coalesce
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+
+
 from core.models import Game, RomHack, HackRating
 from .serializers import (
-    UserSerializer,
-    RegisterSerializer,
     GameSerializer,
     RomHackSerializer,
-    HackRatingSerializer
+    HackRatingSerializer,
+    UserSerializer,
+    RegisterSerializer
 )
 
-# Cadastro e consulta
+
 class AuthViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
 
@@ -27,26 +29,45 @@ class AuthViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+        return Response(UserSerializer(request.user).data)
 
-# lista e busca de jogos
-class GameViewSet(viewsets.ModelViewSet):
-    serializer_class = GameSerializer
+class GameViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
+    serializer_class = GameSerializer
 
     def get_queryset(self):
-        return (
-            Game.objects
-            .annotate(total_hacks=Count('hacks'))
-            .prefetch_related(
-                'hacks__ratings__user',
-                'hacks__created_by'
-            )
-            .order_by('-created_at')
+        queryset = Game.objects.annotate(
+            total_hacks=Count('hacks', distinct=True),
+            latest_hack_date=Max('hacks__created_at'),
         )
 
-# CRUD de Mods/Traduções e submissão de avaliações por usuários
+        platform = self.request.query_params.get('platform')
+        if platform:
+            queryset = queryset.filter(platform__iexact=platform)
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(title__icontains=search)
+
+        filter_type = self.request.query_params.get('filter')
+        if filter_type == 'popular':
+            queryset = queryset.order_by('-total_players')
+        elif filter_type == 'recent_hacks':
+            # Apenas jogos que realmente possuem hacks, ordenados pelo patch mais recente
+            queryset = queryset.filter(total_hacks__gt=0).order_by('-latest_hack_date')
+        elif filter_type == 'most_hacked':
+            queryset = queryset.filter(total_hacks__gt=0).order_by('-total_hacks')
+
+        limit = self.request.query_params.get('limit')
+        if limit:
+            try:
+                queryset = queryset[:int(limit)]
+            except ValueError:
+                pass
+
+        return queryset
+
+
 class RomHackViewSet(viewsets.ModelViewSet):
     serializer_class = RomHackSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -59,7 +80,7 @@ class RomHackViewSet(viewsets.ModelViewSet):
                 total_ratings=Count('ratings')
             )
             .select_related('game', 'created_by')
-            .prefetch_related('ratings__user')
+            .prefetch_related('ratings__user', 'screenshots')
             .order_by('-avg_score')
         )
 
@@ -71,11 +92,15 @@ class RomHackViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def my_hacks(self, request):
+        """Retorna as ROM hacks submetidas pelo usuário logado"""
+        user_hacks = self.get_queryset().filter(created_by=request.user)
+        serializer = self.get_serializer(user_hacks, many=True)
+        return Response(serializer.data)
+
     @action(detail=True, methods=['post', 'delete'], permission_classes=[permissions.IsAuthenticated])
     def rate(self, request, pk=None):
-        # POST: Cria ou edita a nota/review do usuário logado no mod.    
-        # DELETE: Exclui a avaliação.
-
         hack = self.get_object()
 
         if request.method == 'DELETE':

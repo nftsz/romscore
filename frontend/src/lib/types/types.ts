@@ -1,16 +1,19 @@
-export interface User {
+export type CategoryChoice = 'translation' | 'improvement' | 'complete_hack' | 'difficulty';
+
+export interface HackScreenshot {
   id: number;
-  username: string;
-  email: string;
+  image_url: string;
+  caption?: string;
+  created_at: string;
 }
 
 export interface HackRating {
   id: number;
-  user: number;
   username: string;
   score: number;
-  review: string | null;
+  review?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface RomHack {
@@ -18,25 +21,42 @@ export interface RomHack {
   game: number;
   title: string;
   author_name: string;
-  category: 'translation' | 'improvement' | 'complete_hack' | 'difficulty';
+  category: CategoryChoice;
   category_display: string;
   description: string;
-  patch_url: string | null;
-  submitted_by: string;
+  patch_url?: string;
+  cover_url?: string;
+  submitted_by?: string;
   avg_score: number;
   total_ratings: number;
-  user_rating: number | null;
-  ratings?: HackRating[];
+  user_rating?: number | null;
+  screenshots: HackScreenshot[];
+  ratings: HackRating[];
   created_at: string;
 }
 
 export interface Game {
   id: number;
-  rawg_id: number;
+  ra_id: number;
   slug: string;
   title: string;
-  cover_url: string | null;
+  console_id?: number;
+  platform: string;
+  released_date?: string;
+  publisher?: string;
+  developer?: string;
+  genre?: string;
+  cover_url?: string;
+  title_screen_url?: string;
+  ingame_screen_url?: string;
+  total_players: number;
   total_hacks: number;
-  hacks?: RomHack[];
+  hacks: RomHack[];
   created_at: string;
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email?: string;
 }
