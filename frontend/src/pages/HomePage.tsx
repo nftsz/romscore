@@ -1,160 +1,192 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Game } from '../lib/types/types';
 import { api } from '../services/api';
-import { Game, RomHack } from '../lib/types/types';
-import { useAuth } from '../lib/context/AuthContext';
-import { Star, Plus, LogIn, LogOut } from 'lucide-react';
+import { PlatformSection } from '../components/PlatformSection';
+import { GameCard } from '../components/GameCard';
+
+const CONSOLES = [
+  { id: 'SNES', title: 'Super Nintendo' },
+  { id: 'GBA', title: 'Game Boy Advance' },
+  { id: 'PS1', title: 'PlayStation 1' },
+  { id: 'PS2', title: 'PlayStation 2' },
+  { id: 'N64', title: 'Nintendo 64' },
+  { id: 'Mega Drive', title: 'Mega Drive / Genesis' },
+];
 
 export const HomePage: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const [games, setGames] = useState<Game[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<Game[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
-  // Estados para envio de nota rápida
-  const [selectedHack, setSelectedHack] = useState<number | null>(null);
-  const [score, setScore] = useState(5);
-  const [review, setReview] = useState('');
-
-  const fetchGames = async () => {
-    try {
-      const response = await api.get<Game[]>('/games/');
-      setGames(response.data);
-    } catch (err) {
-      console.error('Erro ao buscar jogos:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Busca textual debounce
   useEffect(() => {
-    fetchGames();
-  }, []);
-
-  const handleRate = async (hackId: number) => {
-    if (!isAuthenticated) {
-      alert('Você precisa estar logado para avaliar!');
+    if (!search.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
       return;
     }
-    try {
-      await api.post(`/hacks/${hackId}/rate/`, { score, review });
-      alert('Avaliação enviada com sucesso!');
-      setSelectedHack(null);
-      setReview('');
-      fetchGames();
-    } catch (err) {
-      console.error('Erro ao avaliar hack:', err);
-      alert('Erro ao enviar avaliação.');
-    }
-  };
 
-  if (loading) {
-    return <div style={{ padding: '2rem', color: '#fff' }}>Carregando catálogo...</div>;
-  }
+    setIsSearching(true);
+    const timeout = setTimeout(async () => {
+      try {
+        const response = await api.get<Game[]>('/games/', {
+          params: { search: search.trim() },
+        });
+        setSearchResults(response.data);
+      } catch (err) {
+        console.error('Erro ao pesquisar jogos:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timeout);
+  }, [search]);
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem', fontFamily: 'sans-serif' }}>
-      {/* Header com Auth */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ margin: 0 }}>🎮 Ride Analytics</h1>
-          <p style={{ margin: '0.5rem 0 0', color: '#888' }}>Descoberta e Avaliações de Hacks, Traduções e Mods</p>
-        </div>
-        <div>
-          {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span>Olá, <strong>{user?.username}</strong>!</span>
-              <button onClick={logout} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
-                <LogOut size={16} /> Sair
+    <div className="min-h-screen bg-slate-950 text-slate-100 pb-16">
+      {/* Hero Section & Search Header */}
+      <header className="border-b border-slate-900 bg-slate-900/40 backdrop-blur-md sticky top-0 z-20 py-4 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black tracking-wider text-indigo-400 font-mono">
+              RIDE ANALYTICS
+            </h1>
+            <p className="text-xs text-slate-400">
+              Catálogo de clássicos e ROM hacks da comunidade
+            </p>
+          </div>
+
+          {/* Campo de Busca */}
+          <div className="w-full md:w-96 relative">
+            <input
+              type="text"
+              placeholder="Buscar jogo (ex: Zelda, Mario, Sonic)..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-2.5 text-xs text-slate-500 hover:text-slate-300"
+              >
+                ✕
               </button>
-            </div>
-          ) : (
-            <a href="/login" style={{ padding: '0.5rem 1rem', background: '#3b82f6', color: '#fff', textDecoration: 'none', borderRadius: '4px' }}>
-              <LogIn size={16} /> Entrar / Criar Conta
-            </a>
-          )}
+            )}
+          </div>
         </div>
       </header>
 
-      {/* Listagem de Jogos */}
-      <div style={{ display: 'grid', gap: '2rem' }}>
-        {games.length === 0 ? (
-          <p>Nenhum jogo cadastrado ainda. Use o Swagger ou adicione o primeiro jogo!</p>
-        ) : (
-          games.map((game) => (
-            <div key={game.id} style={{ border: '1px solid #333', borderRadius: '8px', padding: '1.5rem', background: '#1a1a1a' }}>
-              <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem' }}>
-                {game.cover_url && (
-                  <img src={game.cover_url} alt={game.title} style={{ width: '120px', height: '160px', objectFit: 'cover', borderRadius: '4px' }} />
-                )}
-                <div>
-                  <h2 style={{ margin: '0 0 0.5rem' }}>{game.title}</h2>
-                  <span style={{ fontSize: '0.85rem', color: '#aaa', background: '#333', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
-                    {game.total_hacks} Mods / Traduções cadastradas
-                  </span>
-                </div>
-              </div>
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto px-6 pt-6">
+        {/* Visualização de Resultados da Busca */}
+        {search.trim() ? (
+          <section className="py-6">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 animate-pulse" />
+              Resultados para "{search}" ({searchResults.length})
+            </h2>
 
-              {/* Lista de Mods daquele Jogo */}
-              <h3 style={{ borderBottom: '1px solid #333', paddingBottom: '0.5rem', marginTop: '1.5rem' }}>
-                Mods & Traduções Disponíveis
-              </h3>
-              
-              <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
-                {game.hacks?.map((hack) => (
-                  <div key={hack.id} style={{ background: '#252525', padding: '1rem', borderRadius: '6px', border: '1px solid #444' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <h4 style={{ margin: '0 0 0.3rem' }}>{hack.title}</h4>
-                        <span style={{ fontSize: '0.8rem', color: '#60a5fa' }}>Por: {hack.author_name} ({hack.category_display})</span>
-                        <p style={{ margin: '0.5rem 0', fontSize: '0.9rem', color: '#ccc' }}>{hack.description}</p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#f59e0b', fontWeight: 'bold' }}>
-                          <Star size={16} fill="#f59e0b" /> {hack.avg_score.toFixed(1)} <span style={{ color: '#888', fontSize: '0.8rem' }}>({hack.total_ratings})</span>
-                        </div>
-                        {hack.patch_url && (
-                          <a href={hack.patch_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: '#10b981', display: 'block', marginTop: '0.5rem' }}>
-                            Baixar Patch ↗
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Botão para Avaliar */}
-                    <div style={{ marginTop: '0.8rem', paddingTop: '0.8rem', borderTop: '1px dashed #333' }}>
-                      {selectedHack === hack.id ? (
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
-                          <select value={score} onChange={(e) => setScore(Number(e.target.value))} style={{ padding: '0.3rem' }}>
-                            <option value={5}>5 ★ - Excelente</option>
-                            <option value={4}>4 ★ - Muito Bom</option>
-                            <option value={3}>3 ★ - Regular</option>
-                            <option value={2}>2 ★ - Ruim</option>
-                            <option value={1}>1 ★ - Péssimo</option>
-                          </select>
-                          <input
-                            type="text"
-                            placeholder="Comentário sobre estabilidade/tradução..."
-                            value={review}
-                            onChange={(e) => setReview(e.target.value)}
-                            style={{ flex: 1, padding: '0.3rem' }}
-                          />
-                          <button onClick={() => handleRate(hack.id)} style={{ padding: '0.3rem 0.8rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                            Salvar
-                          </button>
-                          <button onClick={() => setSelectedHack(null)} style={{ padding: '0.3rem', cursor: 'pointer' }}>Cancelar</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setSelectedHack(hack.id)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem', cursor: 'pointer' }}>
-                          Avaliar este mod
-                        </button>
-                      )}
-                    </div>
-                  </div>
+            {isSearching ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="aspect-[3/4] bg-slate-900 animate-pulse rounded-xl" />
                 ))}
               </div>
-            </div>
-          ))
+            ) : searchResults.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {searchResults.map((game) => (
+                  <GameCard key={game.id} game={game} onSelect={setSelectedGame} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 text-slate-500">
+                Nenhum jogo encontrado para o termo pesquisado.
+              </div>
+            )}
+          </section>
+        ) : (
+          /* Seções por Plataforma (Catálogo Canônico) */
+          <div>
+            {CONSOLES.map((console) => (
+              <PlatformSection
+                key={console.id}
+                platform={console.id}
+                title={console.title}
+                onSelectGame={setSelectedGame}
+              />
+            ))}
+          </div>
         )}
-      </div>
+      </main>
+
+      {/* Modal Rápido de Detalhes / Hacks do Jogo */}
+      {selectedGame && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          onClick={() => setSelectedGame(null)}
+        >
+          <div
+            className="relative max-w-2xl w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedGame(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              ✕
+            </button>
+
+            <div className="flex flex-col sm:flex-row gap-6">
+              {selectedGame.cover_url && (
+                <img
+                  src={selectedGame.cover_url}
+                  alt={selectedGame.title}
+                  className="w-36 h-48 object-cover rounded-lg border border-slate-800 shadow-md mx-auto sm:mx-0"
+                />
+              )}
+
+              <div className="flex-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">
+                  {selectedGame.platform}
+                </span>
+                <h2 className="text-xl font-bold mt-1 text-slate-100">{selectedGame.title}</h2>
+
+                <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-400">
+                  <span>👥 {selectedGame.total_players.toLocaleString()} jogadores</span>
+                  {selectedGame.released_date && <span>📅 {selectedGame.released_date}</span>}
+                  {selectedGame.developer && <span>🛠️ {selectedGame.developer}</span>}
+                </div>
+
+                <div className="mt-6 border-t border-slate-800 pt-4">
+                  <h3 className="text-sm font-semibold text-slate-300">
+                    ROM Hacks & Traduções ({selectedGame.hacks?.length || 0})
+                  </h3>
+                  {selectedGame.hacks && selectedGame.hacks.length > 0 ? (
+                    <ul className="mt-2 divide-y divide-slate-800/60 max-h-40 overflow-y-auto">
+                      {selectedGame.hacks.map((hack) => (
+                        <li key={hack.id} className="py-2 text-xs flex justify-between items-center">
+                          <div>
+                            <span className="font-semibold text-indigo-300">{hack.title}</span>
+                            <span className="text-slate-500 ml-2">por {hack.author_name}</span>
+                          </div>
+                          <span className="text-amber-400 font-mono">★ {hack.avg_score.toFixed(1)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-xs text-slate-500">
+                      Nenhuma modificação cadastrada para este jogo ainda.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

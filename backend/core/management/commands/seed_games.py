@@ -23,8 +23,8 @@ class Command(BaseCommand):
             return
 
         for console in RA_CONSOLES:
-            self.stdout.write(f"\n🎮 Ingerindo {console['name']}...")
-            raw_games = ra_service.get_console_games(console["id"], limit=10)
+            self.stdout.write(f"\n🎮 Recrutando {console['name']}...")
+            raw_games = ra_service.get_console_games(console["id"], limit=50)
 
             saved = 0
             for item in raw_games:
