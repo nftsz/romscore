@@ -3,83 +3,72 @@
 ![GitHub top language](https://img.shields.io/github/languages/top/nftsz/romscore)
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/nftsz/romscore/main)
 
-Plataforma web para **catalogação, descoberta e avaliação de jogos clássicos e ROM Hacks**, com integração a dados externos, agregação de métricas e persistência relacional em PostgreSQL.
+Plataforma fullstack para **descoberta, catalogação e avaliação de jogos clássicos e ROM Hacks**.
 
-> **Projeto de Portfólio Técnico / Estudo de Engenharia de Software**
->
-> Aplicação fullstack containerizada com **Django REST Framework**, **PostgreSQL** e **React (TypeScript)**, desenvolvida para catalogação, avaliação e descoberta de jogos retrô e modificações da comunidade (*ROM Hacks* e traduções).
+O projeto integra dados do **RetroAchievements**, disponibiliza uma API REST com Django REST Framework e oferece uma interface React para explorar jogos, consultar ROM Hacks, enviar modificações e avaliar conteúdos da comunidade.
 
-## 📌 Contexto & Objetivos de Aprendizado
+> **Projeto de portfólio técnico e estudo de engenharia de software.**
 
 Este projeto foi desenvolvido com o propósito acadêmico e prático de exercitar a construção de uma **arquitetura orientada a serviços**, explorando desafios reais de desenvolvimento backend, integração com APIs externas, modelagem de dados e otimização de consultas.
 
-Os principais objetivos foram:
+## ✨ Funcionalidades
 
-* **Modelagem Relacional:** Estruturação de entidades, relacionamentos N:M, agregações de avaliações e integridade referencial utilizando Django ORM.
-* **Integração e Tratamento de APIs Externas:** Desenvolvimento de um pipeline de ingestão desacoplado para consumo e normalização dos dados da **RetroAchievements Web API**.
-* **Performance de Consultas:** Redução de consultas redundantes e do problema clássico de *N+1 queries* por meio de `annotate`, `prefetch_related` e estratégias de indexação.
-* **Autenticação Stateless:** Implementação de autenticação baseada em JSON Web Tokens (JWT).
-* **Infraestrutura e Containerização:** Criação de um ambiente reprodutível utilizando Docker e Docker Compose.
-* **Desenvolvimento Fullstack:** Integração entre uma API REST e uma aplicação React com TypeScript, incluindo filtros, busca, paginação e gerenciamento de estado.
+* Catálogo de jogos clássicos
+* Busca e filtros por plataforma
+* Ordenação por popularidade e atividade da comunidade
+* Catálogo de ROM Hacks e traduções
+* Avaliação e reviews de ROM Hacks
+* Galeria de screenshots
+* Autenticação com JWT
+* API REST paginada
+* Documentação OpenAPI / Swagger
+* Ambiente containerizado com Docker
 
-## 🧠 Arquitetura do Sistema & Decisões de Engenharia
+## 🛠️ Stack
 
-```text
-  ┌──────────────────────────────────────────────────────────┐
-  │                    React + TypeScript                    │
-  │              (Tailwind CSS / Single Page App)            │
-  └────────────────────────────┬─────────────────────────────┘
-                               │ HTTP / REST API
-                               ▼
-  ┌──────────────────────────────────────────────────────────┐
-  │                 Django REST Framework                    │
-  │   ┌──────────────────────┐    ┌──────────────────────┐   │
-  │   │  API Controllers     │    │  ETL Seed Service    │   │
-  │   │  (ViewSets/Routers)  │    │  (RA API Ingestor)   │   │
-  │   └──────────┬───────────┘    └──────────┬───────────┘   │
-  └──────────────┼───────────────────────────┼───────────────┘
-                 │ Django ORM                │ API_GetGameExtended
-                 ▼                           ▼
-  ┌──────────────────────────┐    ┌──────────────────────────┐
-  │   PostgreSQL Database    │    │ RetroAchievements API    │
-  │   (Docker Environment)   │    │  (Metadata & Assets)     │
-  └──────────────────────────┘    └──────────────────────────┘
+**Backend**
+
+* Python
+* Django
+* Django REST Framework
+* SimpleJWT
+
+**Frontend**
+
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
+* Axios
+
+**Database & Infrastructure**
+
+* PostgreSQL
+* Docker
+* Docker Compose
+
+**External API**
+
+* RetroAchievements Web API
+
+## 🧠 Principais decisões técnicas
+
+O projeto foi desenvolvido buscando aplicar conceitos de engenharia de software além da implementação das funcionalidades.
+
+### API REST
+
+A API utiliza ViewSets e paginação nativa do Django REST Framework, mantendo um contrato consistente entre os endpoints:
+
+```json
+{
+  "count": 120,
+  "next": "...",
+  "previous": null,
+  "results": []
+}
 ```
 
-### 1. Evolução da Fonte de Dados
-
-Inicialmente, o projeto foi planejado utilizando a API da RAWG. Durante o desenvolvimento, foram identificadas inconsistências na classificação de plataformas para parte do catálogo retrô, especialmente em títulos associados a diferentes gerações de consoles.
-
-**Solução:** a arquitetura foi adaptada para utilizar diretamente a **RetroAchievements Web API**, com foco no endpoint `API_GetGameExtended.php`.
-
-**Resultado:** maior consistência nos metadados dos jogos, acesso às URLs oficiais de BoxArt e utilização da métrica `NumDistinctPlayers`, que representa a quantidade de jogadores distintos registrados para cada título na plataforma.
-
-Essa métrica passou a ser utilizada como um dos critérios para determinar a relevância e popularidade dos jogos no catálogo.
-
-### 2. Otimização de Queries no Django ORM
-
-Para suportar filtros e ordenações dinâmicas na API, como `popular`, `most_hacked` e `recent_hacks`, a camada de consulta utiliza agregações diretamente no PostgreSQL e estratégias de pré-carregamento de relacionamentos.
-
-Exemplo:
-
-```python
-# Trecho da implementação em core/api/v1/viewsets.py
-queryset = Game.objects.annotate(
-    total_hacks=Count('hacks', distinct=True),
-    latest_hack_date=Max('hacks__created_at')
-).prefetch_related('hacks__ratings__user')
-```
-
-Essa abordagem reduz consultas desnecessárias ao banco e evita o problema de **N+1 queries** durante a serialização dos relacionamentos.
-
-## ⚙️ Tecnologias & Bibliotecas
-
-* **Backend:** Python 3.11, Django, Django REST Framework (DRF), SimpleJWT.
-* **Banco de Dados:** PostgreSQL 15, Django ORM.
-* **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Axios, React Router DOM.
-* **Documentação da API:** Swagger / OpenAPI com `drf-spectacular`.
-* **Infraestrutura:** Docker, Docker Compose.
-* **Integração externa:** RetroAchievements Web API.
+Isso permite que o frontend trabalhe com uma estrutura previsível independentemente de filtros ou buscas.
 
 ## 🔌 Endpoints RESTful
 
@@ -93,67 +82,93 @@ Essa abordagem reduz consultas desnecessárias ao banco e evita o problema de **
 | `POST` | `/api/v1/auth/login/`      | Autenticação do usuário e emissão de tokens JWT.                           | Pública      |
 | `POST` | `/api/v1/auth/register/`   | Cadastro de uma nova conta na plataforma.                                  | Pública      |
 
-## 🚀 Como Executar o Ambiente Local
+### Performance e ORM
+
+O Django ORM é utilizado para agregações e otimização de consultas através de:
+
+* `annotate`
+* `Count`
+* `Avg`
+* `Max`
+* `select_related`
+* `prefetch_related`
+* `distinct=True`
+
+A rotina de ingestão também utiliza conjuntos (`Set`) para verificar `ra_id`s existentes em memória, evitando consultas individuais ao banco durante o processo de seed.
+
+### Ingestão de dados
+
+Os dados dos jogos são obtidos através da RetroAchievements Web API e normalizados antes de serem persistidos no PostgreSQL.
+
+O processo de ingestão foi estruturado para reduzir consultas desnecessárias e controlar a frequência das requisições externas.
+
+## 🏗️ Arquitetura
+
+```text
+React + TypeScript
+        │
+        │ HTTP / REST + JWT
+        ▼
+Django REST Framework
+        │
+        ├──────────────► RetroAchievements API
+        │
+        ▼
+   PostgreSQL
+```
+
+## 🚀 Como executar
 
 ### Pré-requisitos
 
-* Docker Engine (>= 20.10)
-* Docker Compose (>= 2.0)
+* Docker
+* Docker Compose
 
-### 1. Configurar Variáveis de Ambiente
+### Configuração
 
 Copie o arquivo `.env.example` para `.env` na raiz do projeto e configure as credenciais da RetroAchievements Web API e as variáveis do PostgreSQL:
 
 ```env
-RA_USER=seu_usuario_retroachievements
-RA_API_KEY=sua_web_api_key
+RA_USER=seu_usuario
+RA_API_KEY=sua_api_key
 
-SECRET_KEY=django-insecure-key-dev-environment
-
-POSTGRES_DB=ride_analytics_db
+SECRET_KEY=django-insecure-key-dev
+POSTGRES_DB=romscore_db
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_HOST=db
 POSTGRES_PORT=5432
 ```
 
-> **Importante:** nunca versione o arquivo `.env` ou exponha sua API Key. Utilize o `.env.example` apenas como referência para as variáveis necessárias.
-
-### 2. Inicializar os Containers
-
-Construa as imagens e inicialize os serviços:
+### Inicialização
 
 ```bash
 docker compose up --build -d
-```
 
-### 3. Executar as Migrações e o Ingestor de Dados
-
-Aplique as migrações do Django e popule o catálogo utilizando os dados da RetroAchievements:
-
-```bash
-# Executa as migrações do banco de dados
 docker compose exec web python manage.py migrate
 
-# Executa o processo de ingestão dos jogos
 docker compose exec web python manage.py seed_games
 ```
 
-### 4. Acessar a Aplicação
+### Acessos
 
-* **Interface Web (React):** `http://localhost:5173/`
-* **API Backend (Django REST Framework):** `http://localhost:8000/api/v1/games/`
-* **Documentação Interativa (Swagger):** `http://localhost:8000/api/docs/`
+* Frontend: `http://localhost:5173/`
+* API: `http://localhost:8000/api/v1/games/`
+* Swagger: `http://localhost:8000/api/docs/`
 
-## 📌 Principais Aprendizados
+## 📌 Status
 
-1. **Integração com APIs externas:** tratamento de limites de requisições (*rate limits*), falhas de comunicação e normalização de dados provenientes de serviços externos.
-2. **Modelagem e consistência de dados:** adaptação de contratos externos aos modelos internos do Django ORM sem propagar inconsistências para o frontend.
-3. **Otimização de consultas:** utilização de agregações, `prefetch_related`, `select_related` e indexação para reduzir consultas desnecessárias ao banco.
-4. **Arquitetura REST:** organização de recursos, ViewSets, serializers, autenticação e regras de negócio em uma API versionada.
-5. **Desenvolvimento React:** construção de componentes reutilizáveis, gerenciamento de estado, debounce em buscas textuais e paginação.
-6. **Containerização:** configuração de um ambiente de desenvolvimento reproduzível utilizando Docker Compose.
-7. **Integração Fullstack:** desenvolvimento da comunicação entre frontend e backend utilizando HTTP/REST, Axios e autenticação JWT.
+**V1 — funcional**
+
+A primeira versão da aplicação está concluída. Novas funcionalidades, melhorias de UX, performance e cobertura de testes serão adicionadas incrementalmente.
+
+## 📚 Documentação e evolução
+
+Para acompanhar as alterações técnicas e decisões realizadas durante o desenvolvimento, consulte:
+
+* [`CHANGELOG.md`](CHANGELOG.md) — histórico de mudanças
+* GitHub Issues — funcionalidades e melhorias planejadas
+* Pull Requests — alterações e discussões técnicas
 
 ## 📄 Licença
 

@@ -23,7 +23,7 @@ RA_CONSOLES = [
 ]
 
 class Command(BaseCommand):
-    help = "Popula o catálogo completo do RetroAchievements de forma segura e resiliente"
+    help = "Popula o catálogo do RetroAchievements com otimização de queries e controle de taxa"
 
     def handle(self, *args, **options):
         ra_service = RetroAchievementsService()
@@ -36,9 +36,15 @@ class Command(BaseCommand):
 
         for console in RA_CONSOLES:
             self.stdout.write(f"\n🎮 Importando catálogo completo de {console['name']} (ID: {console['id']})...")
-            
-            # None traz a lista completa de jogos do console
-            raw_games = ra_service.get_console_games(console["id"], limit=None)
+
+            # 1. OTIMIZAÇÃO DE BANCO: Carrega todos os IDs existentes de uma vez só em memória (Set)
+            # Isso elimina chamadas .exists() no banco dentro do loop (Redução de N queries para 1)
+            existing_ra_ids = set(
+                Game.objects.filter(console_id=console["id"]).values_list('ra_id', flat=True)
+            )
+
+            # 2. INGESTÃO SEGURA: Define um limite razoável por execução para não exceder limites de IP
+            raw_games = ra_service.get_console_games(console["id"], limit=300)
 
             if not raw_games:
                 self.stdout.write(self.style.WARNING(f"Nenhum jogo retornado para {console['name']}."))
@@ -52,8 +58,7 @@ class Command(BaseCommand):
                 if not raw_id:
                     continue
 
-                # Pula chamadas redundantes se o jogo já existe no banco
-                if Game.objects.filter(ra_id=raw_id).exists():
+                if raw_id in existing_ra_ids:
                     skipped += 1
                     continue
 
@@ -81,8 +86,13 @@ class Command(BaseCommand):
                             "total_players": data["total_players"],
                         }
                     )
+
+                    # Adiciona ao conjunto local para evitar duplicatas na mesma sessão
+                    existing_ra_ids.add(data["ra_id"])
                     saved += 1
-                    time.sleep(0.15)  # Intervalo de segurança contra bloqueio (429 Too Many Requests)
+
+                    # Pausa contra bloqueio (Rate Limit Rate)
+                    time.sleep(0.15) 
 
                 except Exception as e:
                     self.stdout.write(self.style.WARNING(f"Erro ao processar ID {raw_id}: {e}"))
