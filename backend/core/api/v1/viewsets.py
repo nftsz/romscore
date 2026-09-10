@@ -74,6 +74,7 @@ class GameViewSet(viewsets.ReadOnlyModelViewSet):
 class RomHackViewSet(viewsets.ModelViewSet):
     serializer_class = RomHackSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         queryset = (
