@@ -1,7 +1,7 @@
 # 🎮 ROMScore — Game ROM Rating & Discovery Platform
 
-![GitHub top language](https://img.shields.io/github/languages/top/nftsz/star-feedback)
-![GitHub last commit (branch)](https://img.shields.io/github/last-commit/nftsz/star-feedback/main)
+![GitHub top language](https://img.shields.io/github/languages/top/nftsz/romscore)
+![GitHub last commit (branch)](https://img.shields.io/github/last-commit/nftsz/romscore/main)
 
 Plataforma web para **catalogação, descoberta e avaliação de jogos clássicos e ROM Hacks**, com integração a dados externos, agregação de métricas e persistência relacional em PostgreSQL.
 
