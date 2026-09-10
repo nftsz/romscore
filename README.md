@@ -1,10 +1,15 @@
-# 🎮 ROMScore
+# 🎮 ROMScore — Game ROM Rating & Discovery Platform
+
+![GitHub top language](https://img.shields.io/github/languages/top/nftsz/romscore)
+![GitHub last commit (branch)](https://img.shields.io/github/last-commit/nftsz/romscore/main)
 
 Plataforma fullstack para **descoberta, catalogação e avaliação de jogos clássicos e ROM Hacks**.
 
 O projeto integra dados do **RetroAchievements**, disponibiliza uma API REST com Django REST Framework e oferece uma interface React para explorar jogos, consultar ROM Hacks, enviar modificações e avaliar conteúdos da comunidade.
 
 > **Projeto de portfólio técnico e estudo de engenharia de software.**
+
+Este projeto foi desenvolvido com o propósito acadêmico e prático de exercitar a construção de uma **arquitetura orientada a serviços**, explorando desafios reais de desenvolvimento backend, integração com APIs externas, modelagem de dados e otimização de consultas.
 
 ## ✨ Funcionalidades
 
@@ -65,6 +70,18 @@ A API utiliza ViewSets e paginação nativa do Django REST Framework, mantendo u
 
 Isso permite que o frontend trabalhe com uma estrutura previsível independentemente de filtros ou buscas.
 
+## 🔌 Endpoints RESTful
+
+| Método | Rota HTTP                  | Descrição / Regra de Negócio                                               | Autenticação |
+| ------ | -------------------------- | -------------------------------------------------------------------------- | ------------ |
+| `GET`  | `/api/v1/games/`           | Listagem paginada de jogos. Suporta `?platform=`, `?filter=` e `?search=`. | Pública      |
+| `GET`  | `/api/v1/games/{id}/`      | Detalhes do jogo, imagens oficiais e lista de ROM Hacks associadas.        | Pública      |
+| `POST` | `/api/v1/hacks/`           | Submissão de novo patch/tradução e galeria de screenshots.                 | JWT          |
+| `GET`  | `/api/v1/hacks/my_hacks/`  | Lista apenas as modificações submetidas pelo usuário autenticado.          | JWT          |
+| `POST` | `/api/v1/hacks/{id}/rate/` | Cria ou atualiza uma avaliação de 1 a 5 estrelas e uma review da hack.     | JWT          |
+| `POST` | `/api/v1/auth/login/`      | Autenticação do usuário e emissão de tokens JWT.                           | Pública      |
+| `POST` | `/api/v1/auth/register/`   | Cadastro de uma nova conta na plataforma.                                  | Pública      |
+
 ### Performance e ORM
 
 O Django ORM é utilizado para agregações e otimização de consultas através de:
@@ -109,7 +126,7 @@ Django REST Framework
 
 ### Configuração
 
-Crie um `.env` na raiz do projeto:
+Copie o arquivo `.env.example` para `.env` na raiz do projeto e configure as credenciais da RetroAchievements Web API e as variáveis do PostgreSQL:
 
 ```env
 RA_USER=seu_usuario
@@ -155,4 +172,6 @@ Para acompanhar as alterações técnicas e decisões realizadas durante o desen
 
 ## 📄 Licença
 
-Este projeto está disponível sob a licença MIT.
+Projeto desenvolvido para fins acadêmicos, estudo e composição de portfólio em engenharia de software.
+
+Licenciado sob a **MIT License**.
