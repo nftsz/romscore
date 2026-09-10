@@ -38,13 +38,7 @@ export const LoginPage: React.FC = () => {
     } catch (err: any) {
       if (err.response?.data) {
         const firstError = Object.values(err.response.data)[0];
-        if (Array.isArray(firstError)) {
-          setError(firstError[0]);
-        } else if (typeof firstError === 'string') {
-          setError(firstError);
-        } else {
-          setError('Erro na requisição. Verifique os dados informados.');
-        }
+        setError(Array.isArray(firstError) ? firstError[0] : String(firstError));
       } else {
         setError('Não foi possível conectar ao servidor.');
       }
@@ -54,43 +48,38 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center px-4 py-12">
-      {/* Botão de Voltar para a Home */}
+    <div className="min-h-screen bg-[#121212] text-neutral-100 flex flex-col justify-center items-center px-4 py-12">
       <Link
         to="/"
-        className="mb-8 flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-indigo-400 transition-colors"
+        className="mb-8 flex items-center gap-2 text-xs font-bold text-neutral-400 hover:text-amber-400 transition-colors"
       >
         ← Voltar para a página inicial
       </Link>
 
-      {/* Card Principal */}
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl shadow-indigo-950/20">
-        {/* Header do Card com a Logo */}
+      <div className="w-full max-w-md bg-[#181818] border border-[#2a2a2a] rounded-2xl p-8 shadow-2xl">
         <div className="flex flex-col items-center mb-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white font-black text-2xl shadow-lg shadow-indigo-600/30 mb-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500 text-neutral-950 font-black text-2xl shadow-lg shadow-amber-500/20 mb-3">
             🎮
           </div>
-          <h1 className="text-xl font-extrabold tracking-wider text-slate-100 font-mono">
-            ROM<span className="text-indigo-400">Score</span>
+          <h1 className="text-xl font-extrabold tracking-wider text-neutral-100 font-mono">
+            ROM<span className="text-amber-400">Score</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-neutral-400 mt-1">
             {isRegister
               ? 'Crie sua conta para enviar e avaliar ROM hacks'
               : 'Entre para gerenciar suas modificações e avaliações'}
           </p>
         </div>
 
-        {/* Mensagem de Erro */}
         {error && (
           <div className="mb-4 rounded-lg bg-rose-500/10 border border-rose-500/30 p-3 text-xs text-rose-400">
             {error}
           </div>
         )}
 
-        {/* Formulário */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">
+            <label className="block text-xs font-bold text-neutral-400 mb-1.5">
               Nome de Usuário
             </label>
             <input
@@ -99,13 +88,13 @@ export const LoginPage: React.FC = () => {
               placeholder="ex: red_trainer"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full bg-[#101010] border border-[#333] rounded-lg px-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 transition-colors"
             />
           </div>
 
           {isRegister && (
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label className="block text-xs font-bold text-neutral-400 mb-1.5">
                 E-mail (opcional)
               </label>
               <input
@@ -113,13 +102,13 @@ export const LoginPage: React.FC = () => {
                 placeholder="ex: trainer@kanto.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-full bg-[#101010] border border-[#333] rounded-lg px-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 transition-colors"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">
+            <label className="block text-xs font-bold text-neutral-400 mb-1.5">
               Senha
             </label>
             <input
@@ -129,28 +118,27 @@ export const LoginPage: React.FC = () => {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full bg-[#101010] border border-[#333] rounded-lg px-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 transition-colors"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 disabled:bg-indigo-600/50 disabled:cursor-not-allowed transition-all duration-200"
+            className="w-full mt-2 rounded-lg bg-amber-500 py-2.5 text-sm font-black text-neutral-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {loading ? 'Processando...' : isRegister ? 'Cadastrar e Entrar' : 'Entrar'}
           </button>
         </form>
 
-        {/* Alternador de Modo Login / Registro */}
-        <div className="mt-6 border-t border-slate-800/80 pt-4 text-center">
+        <div className="mt-6 border-t border-[#252525] pt-4 text-center">
           <button
             type="button"
             onClick={() => {
               setIsRegister(!isRegister);
               setError('');
             }}
-            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            className="text-xs text-amber-400 hover:text-amber-300 font-bold transition-colors"
           >
             {isRegister
               ? 'Já possui uma conta? Faça Login'

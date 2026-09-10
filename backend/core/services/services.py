@@ -14,7 +14,6 @@ class RetroAchievementsService:
         return bool(self.user and self.key)
 
     def get_console_games(self, console_id, limit=30):
-        """Busca a lista de jogos oficiais da plataforma no RetroAchievements."""
         url = f"{RA_BASE_URL}/API_GetGameList.php"
         try:
             res = requests.get(
@@ -42,7 +41,6 @@ class RetroAchievementsService:
             return []
 
     def get_game_details(self, fallback_id, fallback_item=None):
-        """Puxa os detalhes completos, imagens e métricas reais de jogadores."""
         url = f"{RA_BASE_URL}/API_GetGameExtended.php"
         try:
             res = requests.get(

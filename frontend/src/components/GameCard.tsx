@@ -21,9 +21,10 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
   return (
     <div
       onClick={handleClick}
-      className="group relative flex w-44 shrink-0 flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900 transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/10 cursor-pointer select-none"
+      className="group relative flex w-44 shrink-0 flex-col overflow-hidden rounded-xl border border-[#2a2a2a] bg-[#181818] transition-all duration-300 hover:-translate-y-1 hover:border-amber-500/60 hover:shadow-xl hover:shadow-amber-500/10 cursor-pointer select-none"
     >
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-950">
+      {/* BoxArt com Proporção Estrita 3:4 */}
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#101010]">
         {game.cover_url ? (
           <img
             src={game.cover_url}
@@ -32,44 +33,49 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onSelect }) => {
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-xs text-slate-600">
+          <div className="flex h-full w-full items-center justify-center text-xs text-neutral-600">
             Sem Imagem
           </div>
         )}
 
+        {/* Badge Dourada estilo Troféu / Conquista RA */}
         {game.total_hacks > 0 && (
-          <span className="absolute top-2 right-2 z-10 rounded-md bg-emerald-500/90 px-2 py-0.5 text-[10px] font-bold text-white shadow-md backdrop-blur-sm">
-            {game.total_hacks} {game.total_hacks === 1 ? 'Hack' : 'Hacks'}
+          <span className="absolute top-2 right-2 z-10 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-black text-neutral-950 shadow-md">
+            {game.total_hacks} {game.total_hacks === 1 ? 'HACK' : 'HACKS'}
           </span>
         )}
 
-        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <div className="space-y-1 text-[11px] text-slate-300">
+        {/* Overlay no Hover */}
+        <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#121212] via-[#121212]/85 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="space-y-1 text-[11px] text-neutral-300">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-indigo-400">{game.platform}</span>
+              <span className="font-bold text-amber-400">{game.platform}</span>
               {game.released_date && (
-                <span className="text-slate-400">{game.released_date.substring(0, 4)}</span>
+                <span className="text-neutral-400 font-mono text-[10px]">
+                  {game.released_date.substring(0, 4)}
+                </span>
               )}
             </div>
 
             {game.developer && (
-              <p className="line-clamp-1 text-slate-400">
-                <strong className="text-slate-200">Dev:</strong> {game.developer}
+              <p className="line-clamp-1 text-neutral-400">
+                <strong className="text-neutral-200">Dev:</strong> {game.developer}
               </p>
             )}
 
             {game.genre && (
-              <p className="line-clamp-1 text-slate-400">
-                <strong className="text-slate-200">Gênero:</strong> {game.genre}
+              <p className="line-clamp-1 text-neutral-400">
+                <strong className="text-neutral-200">Gênero:</strong> {game.genre}
               </p>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex h-12 items-center border-t border-slate-800/80 bg-slate-900 px-3">
+      {/* Título com Altura Fixa */}
+      <div className="flex h-12 items-center border-t border-[#2a2a2a] bg-[#181818] px-3">
         <h3
-          className="line-clamp-2 text-xs font-semibold leading-tight text-slate-100 group-hover:text-indigo-400 transition-colors"
+          className="line-clamp-2 text-xs font-bold leading-tight text-neutral-200 group-hover:text-amber-400 transition-colors"
           title={game.title}
         >
           {game.title}
