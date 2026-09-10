@@ -26,6 +26,7 @@ const CONSOLES = [
 export const HomePage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Game[]>([]);
+  const [searchTotal, setSearchTotal] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
 
   const [popularGames, setPopularGames] = useState<Game[]>([]);
@@ -43,8 +44,8 @@ export const HomePage: React.FC = () => {
           api.get('/games/', { params: { filter: 'recent_hacks', limit: 12 } }),
         ]);
 
-        const popData = Array.isArray(popRes.data) ? popRes.data : popRes.data?.results || [];
-        const recentData = Array.isArray(recentRes.data) ? recentRes.data : recentRes.data?.results || [];
+        const popData = popRes.data.results || [];
+        const recentData = recentRes.data.results || [];
 
         setPopularGames(popData);
         setRecentHackedGames(recentData);
@@ -55,7 +56,7 @@ export const HomePage: React.FC = () => {
             const res = await api.get('/games/', {
               params: { platform: console.id, filter: 'popular', limit: 12 },
             });
-            consoleData[console.id] = Array.isArray(res.data) ? res.data : res.data?.results || [];
+            consoleData[console.id] = res.data.results || [];
           })
         );
         setConsoleGames(consoleData);
@@ -73,6 +74,7 @@ export const HomePage: React.FC = () => {
   useEffect(() => {
     if (!search.trim()) {
       setSearchResults([]);
+      setSearchTotal(0);
       setIsSearching(false);
       return;
     }
@@ -81,17 +83,15 @@ export const HomePage: React.FC = () => {
     const timeout = setTimeout(async () => {
       try {
         const response = await api.get('/games/', {
-          params: { search: search.trim() },
+          params: { search: search.trim(), limit: 12 },
         });
 
-        const items = Array.isArray(response.data)
-          ? response.data
-          : response.data?.results || [];
-
-        setSearchResults(items);
+        setSearchResults(response.data.results || []);
+        setSearchTotal(response.data.count || 0);
       } catch (err) {
         console.error('Erro na pesquisa:', err);
         setSearchResults([]);
+        setSearchTotal(0);
       } finally {
         setIsSearching(false);
       }
@@ -109,7 +109,7 @@ export const HomePage: React.FC = () => {
           <section className="py-4">
             <h2 className="text-xl font-bold mb-4 text-neutral-200 flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
-              Resultados para "{search}" ({searchResults.length})
+              Resultados para "{search}" ({searchTotal})
             </h2>
 
             {isSearching ? (

@@ -1,16 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Game } from '../lib/types/types';
+import { Game, PaginatedResponse } from '../lib/types/types';
 import { api } from '../services/api';
 import { Header } from '../components/Header';
 import { GameCard } from '../components/GameCard';
 
-interface PaginatedResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Game[];
-}
 
 export const CategoryPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -43,21 +37,15 @@ export const CategoryPage: React.FC = () => {
         setLoading(true);
         setPage(1);
 
-        const params: Record<string, string | number> = { page: 1 };
+        const params: Record<string, string | number> = { page: 1, limit: 12, };
         if (filter) params.filter = filter;
         if (platform) params.platform = platform;
 
-        const response = await api.get<PaginatedResponse | Game[]>('/games/', { params });
+        const response = await api.get<PaginatedResponse>('/games/', { params });
 
-        if ('results' in response.data) {
-          setGames(response.data.results);
-          setTotalCount(response.data.count);
-          setHasMore(!!response.data.next);
-        } else {
-          setGames(response.data);
-          setTotalCount(response.data.length);
-          setHasMore(false);
-        }
+        setGames(response.data.results);
+        setTotalCount(response.data.count);
+        setHasMore(!!response.data.next);
       } catch (err) {
         console.error('Erro ao buscar jogos:', err);
         setGames([]);
@@ -79,7 +67,7 @@ export const CategoryPage: React.FC = () => {
       setLoadingMore(true);
       const nextPage = page + 1;
 
-      const params: Record<string, string | number> = { page: nextPage };
+      const params: Record<string, string | number> = { page: nextPage, limit: 12, };
       if (filter) params.filter = filter;
       if (platform) params.platform = platform;
 

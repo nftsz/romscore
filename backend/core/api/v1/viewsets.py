@@ -16,6 +16,12 @@ from .serializers import (
 )
 
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'limit'
+    max_page_size = 100
+
+
 class AuthViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
 
@@ -30,16 +36,11 @@ class AuthViewSet(viewsets.GenericViewSet):
     def me(self, request):
         return Response(UserSerializer(request.user).data)
 
-class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 50
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
 
 class GameViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
     serializer_class = GameSerializer
-    pagination_class = StandardResultsSetPagination  # 👈 Classe de paginação
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         queryset = Game.objects.annotate(
@@ -59,38 +60,15 @@ class GameViewSet(viewsets.ReadOnlyModelViewSet):
         if filter_type == 'popular':
             queryset = queryset.order_by('-total_players', '-id')
         elif filter_type == 'recent_hacks':
-            queryset = queryset.filter(total_hacks__gt=0).order_by('-latest_hack_date', '-id')
+            queryset = queryset.filter(total_hacks__gt=0).order_by(
+                '-latest_hack_date', '-id')
         elif filter_type == 'most_hacked':
-            queryset = queryset.filter(total_hacks__gt=0).order_by('-total_hacks', '-id')
+            queryset = queryset.filter(
+                total_hacks__gt=0).order_by('-total_hacks', '-id')
         else:
             queryset = queryset.order_by('-total_players', '-id')
 
         return queryset
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-
-        search = request.query_params.get('search')
-        limit = request.query_params.get('limit')
-
-        # Se for busca por texto ou carrossel com limit, retorna a lista direta para facilitar no frontend
-        if search or limit:
-            if limit:
-                try:
-                    queryset = queryset[:int(limit)]
-                except ValueError:
-                    pass
-            serializer = self.get_serializer(queryset, many=True)
-            return Response(serializer.data)
-
-        # Fluxo paginado padrão (para CategoryPage)
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
 
 
 class RomHackViewSet(viewsets.ModelViewSet):
@@ -101,7 +79,8 @@ class RomHackViewSet(viewsets.ModelViewSet):
         queryset = (
             RomHack.objects
             .annotate(
-                avg_score=Coalesce(Avg('ratings__score'), Value(0, output_field=FloatField())),
+                avg_score=Coalesce(Avg('ratings__score'), Value(
+                    0, output_field=FloatField())),
                 total_ratings=Count('ratings', distinct=True)
             )
             .select_related('game', 'created_by')
