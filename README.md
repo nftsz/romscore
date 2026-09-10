@@ -1,4 +1,4 @@
-# 🎮 Ride Analytics — Game ROM Rating & Discovery Platform
+# 🎮 ROMScore — Game ROM Rating & Discovery Platform
 
 ![GitHub top language](https://img.shields.io/github/languages/top/nftsz/star-feedback)
 ![GitHub last commit (branch)](https://img.shields.io/github/last-commit/nftsz/star-feedback/main)
