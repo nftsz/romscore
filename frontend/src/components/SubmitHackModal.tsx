@@ -51,7 +51,6 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
     setLoading(true);
     setError('');
 
-    // Filtra links vazios
     const validScreenshots = screenshots.map((s) => s.trim()).filter(Boolean);
 
     try {
@@ -63,7 +62,7 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
         description: description.trim(),
         cover_url: coverUrl.trim() || undefined,
         patch_url: patchUrl.trim(),
-        screenshots_urls: validScreenshots, // 👈 Chave exata que o backend processa
+        screenshots_urls: validScreenshots,
       });
 
       onSuccess(response.data);
@@ -81,20 +80,20 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-[#2a2a2a] bg-[#181818] p-6 shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-slate-400 hover:text-white"
+          className="absolute right-4 top-4 text-neutral-400 hover:text-white transition-colors"
         >
           ✕
         </button>
 
-        <h2 className="text-lg font-bold text-slate-100 font-mono">
+        <h2 className="text-lg font-black text-neutral-100 font-mono">
           Submeter ROM Hack / Tradução
         </h2>
-        <p className="text-xs text-slate-400 mt-1">
-          Vinculado a: <strong className="text-indigo-400">{gameTitle}</strong>
+        <p className="text-xs text-neutral-400 mt-1">
+          Vinculado a: <strong className="text-amber-400">{gameTitle}</strong>
         </p>
 
         {error && (
@@ -105,7 +104,7 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">
+            <label className="block text-xs font-bold text-neutral-400 mb-1">
               Nome da Modificação / Tradução *
             </label>
             <input
@@ -114,13 +113,13 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
               placeholder="ex: Pokemon Emerald Seaglass / PT-BR"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+              className="w-full rounded-lg border border-[#333] bg-[#101010] px-3 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 transition-colors"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">
+              <label className="block text-xs font-bold text-neutral-400 mb-1">
                 Autor(es) / Grupo *
               </label>
               <input
@@ -129,18 +128,18 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
                 placeholder="ex: Drayano / Equipe BR"
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
-                className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border border-[#333] bg-[#101010] px-3 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">
+              <label className="block text-xs font-bold text-neutral-400 mb-1">
                 Categoria *
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as CategoryChoice)}
-                className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border border-[#333] bg-[#101010] px-3 py-2 text-xs text-neutral-100 focus:outline-none focus:border-amber-500 transition-colors"
               >
                 <option value="complete_hack">Hack Completa</option>
                 <option value="improvement">Melhoria / QoL</option>
@@ -152,7 +151,7 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">
+              <label className="block text-xs font-bold text-neutral-400 mb-1">
                 Link da Capa do Hack (opcional)
               </label>
               <input
@@ -160,12 +159,12 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
                 placeholder="https://imgur.com/capa.png"
                 value={coverUrl}
                 onChange={(e) => setCoverUrl(e.target.value)}
-                className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border border-[#333] bg-[#101010] px-3 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">
+              <label className="block text-xs font-bold text-neutral-400 mb-1">
                 Link do Patch (.ips, .bps, .xdelta) *
               </label>
               <input
@@ -174,35 +173,35 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
                 placeholder="https://romhacking.net/..."
                 value={patchUrl}
                 onChange={(e) => setPatchUrl(e.target.value)}
-                className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                className="w-full rounded-lg border border-[#333] bg-[#101010] px-3 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">
+            <label className="block text-xs font-bold text-neutral-400 mb-1">
               Descrição das Mudanças / Changelog
             </label>
             <textarea
               rows={3}
-              placeholder="O que foi alterado (balanceamento, nova engine, tradução completa)..."
+              placeholder="O que foi alterado (balanceamento, engine, história, tradução)..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+              className="w-full rounded-lg border border-[#333] bg-[#101010] px-3 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 transition-colors"
             />
           </div>
 
-          {/* Screenshots (Links Externos - Máx 3) */}
-          <div className="border-t border-slate-800/80 pt-3">
+          {/* Screenshots com Links Externos */}
+          <div className="border-t border-[#2a2a2a] pt-3">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-medium text-slate-300">
+              <label className="text-xs font-bold text-neutral-300">
                 Screenshots do Hack (Links externos, máx. 3)
               </label>
               {screenshots.length < 3 && (
                 <button
                   type="button"
                   onClick={addScreenshotField}
-                  className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300"
+                  className="text-[11px] font-bold text-amber-400 hover:text-amber-300"
                 >
                   + Adicionar link ({screenshots.length}/3)
                 </button>
@@ -217,7 +216,7 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
                     placeholder={`https://imgur.com/... (screenshot ${idx + 1})`}
                     value={url}
                     onChange={(e) => handleScreenshotChange(idx, e.target.value)}
-                    className="flex-1 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                    className="flex-1 rounded-lg border border-[#333] bg-[#101010] px-3 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 transition-colors"
                   />
                   {screenshots.length > 1 && (
                     <button
@@ -242,7 +241,7 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
                       key={i}
                       src={imgUrl}
                       alt={`Preview ${i + 1}`}
-                      className="h-14 w-24 object-cover rounded-md border border-slate-800 bg-slate-950"
+                      className="h-14 w-24 object-cover rounded-md border border-[#333] bg-[#101010]"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
@@ -255,7 +254,7 @@ export const SubmitHackModal: React.FC<SubmitHackModalProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 rounded-lg bg-indigo-600 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 disabled:opacity-50 transition-colors"
+            className="w-full mt-2 rounded-lg bg-amber-500 py-2.5 text-xs font-black text-neutral-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 disabled:opacity-50 transition-colors"
           >
             {loading ? 'Cadastrando Modificação...' : 'Cadastrar Modificação'}
           </button>

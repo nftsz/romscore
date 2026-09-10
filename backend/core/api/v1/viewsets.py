@@ -4,8 +4,7 @@ from django.db.models.functions import Coalesce
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
-
+from rest_framework.pagination import PageNumberPagination
 
 from core.models import Game, RomHack, HackRating
 from .serializers import (
@@ -31,9 +30,16 @@ class AuthViewSet(viewsets.GenericViewSet):
     def me(self, request):
         return Response(UserSerializer(request.user).data)
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class GameViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny]
     serializer_class = GameSerializer
+    pagination_class = StandardResultsSetPagination  # 👈 Classe de paginação
 
     def get_queryset(self):
         queryset = Game.objects.annotate(
@@ -43,29 +49,48 @@ class GameViewSet(viewsets.ReadOnlyModelViewSet):
 
         platform = self.request.query_params.get('platform')
         if platform:
-            queryset = queryset.filter(platform__iexact=platform)
+            queryset = queryset.filter(platform__iexact=platform.strip())
 
         search = self.request.query_params.get('search')
         if search:
-            queryset = queryset.filter(title__icontains=search)
+            queryset = queryset.filter(title__icontains=search.strip())
 
         filter_type = self.request.query_params.get('filter')
         if filter_type == 'popular':
-            queryset = queryset.order_by('-total_players')
+            queryset = queryset.order_by('-total_players', '-id')
         elif filter_type == 'recent_hacks':
-            # Apenas jogos que realmente possuem hacks, ordenados pelo patch mais recente
-            queryset = queryset.filter(total_hacks__gt=0).order_by('-latest_hack_date')
+            queryset = queryset.filter(total_hacks__gt=0).order_by('-latest_hack_date', '-id')
         elif filter_type == 'most_hacked':
-            queryset = queryset.filter(total_hacks__gt=0).order_by('-total_hacks')
-
-        limit = self.request.query_params.get('limit')
-        if limit:
-            try:
-                queryset = queryset[:int(limit)]
-            except ValueError:
-                pass
+            queryset = queryset.filter(total_hacks__gt=0).order_by('-total_hacks', '-id')
+        else:
+            queryset = queryset.order_by('-total_players', '-id')
 
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        search = request.query_params.get('search')
+        limit = request.query_params.get('limit')
+
+        # Se for busca por texto ou carrossel com limit, retorna a lista direta para facilitar no frontend
+        if search or limit:
+            if limit:
+                try:
+                    queryset = queryset[:int(limit)]
+                except ValueError:
+                    pass
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+
+        # Fluxo paginado padrão (para CategoryPage)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class RomHackViewSet(viewsets.ModelViewSet):
@@ -77,11 +102,11 @@ class RomHackViewSet(viewsets.ModelViewSet):
             RomHack.objects
             .annotate(
                 avg_score=Coalesce(Avg('ratings__score'), Value(0, output_field=FloatField())),
-                total_ratings=Count('ratings')
+                total_ratings=Count('ratings', distinct=True)
             )
             .select_related('game', 'created_by')
             .prefetch_related('ratings__user', 'screenshots')
-            .order_by('-avg_score')
+            .order_by('-avg_score', '-id')
         )
 
         game_id = self.request.query_params.get('game')
@@ -94,7 +119,6 @@ class RomHackViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def my_hacks(self, request):
-        """Retorna as ROM hacks submetidas pelo usuário logado"""
         user_hacks = self.get_queryset().filter(created_by=request.user)
         serializer = self.get_serializer(user_hacks, many=True)
         return Response(serializer.data)
@@ -111,7 +135,10 @@ class RomHackViewSet(viewsets.ModelViewSet):
         review = request.data.get('review', '')
 
         if not score or not (1 <= int(score) <= 5):
-            return Response({'error': 'A nota deve ser um inteiro entre 1 e 5.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': 'A nota deve ser um inteiro entre 1 e 5.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         rating, created = HackRating.objects.update_or_create(
             hack=hack,
